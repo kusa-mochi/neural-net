@@ -1,34 +1,40 @@
 #include <exception>
 #include "NeuralNet.h"
 
-
-
-CNeuralNet::CNeuralNet()
-	: _numInputDimension(0)
-	, _numOutputDimension(0)
-	, _numLayer(0)
-	, _numNeuron(NULL)
-	, _layers(NULL)
-{
-}
-
 CNeuralNet::CNeuralNet(long numInputDimension, long numOutputDimension, long numLayer, long* numNeuron)
 {
 	if (numInputDimension < 1)
 	{
-		// TODO
+		throw std::invalid_argument("numInputDimension");
 	}
 	if (numOutputDimension < 1)
 	{
-		// TODO
+		throw std::invalid_argument("numOutputDimension");
 	}
-	if (numLayer < 1)
+	if (numLayer < 2)
 	{
-		// TODO
+		throw std::invalid_argument("numLayer");
 	}
 	if (numNeuron == NULL)
 	{
-		// TODO
+		throw std::invalid_argument("numNeuron");
+	}
+	if (numOutputDimension != numNeuron[numLayer - 1])
+	{
+		throw std::invalid_argument("numOutputDimension must be same as numNeuron.");
+	}
+
+	CNeuralLayer* layer = NULL;
+	for (int iLayer = 0; iLayer < numLayer; iLayer++)
+	{
+		if (layer == NULL)
+		{
+			layer = new CNeuralLayer(numInputDimension, numNeuron[0]);
+		}
+		else
+		{
+			layer->ConnectNextLayer(new CNeuralLayer(layer->GetNumNeuron(), numNeuron[iLayer]));
+		}
 	}
 }
 

@@ -5,7 +5,6 @@
 class CNeuralNet
 {
 public:
-	CNeuralNet();
 	CNeuralNet(long numInputDimension, long numOutputDimension, long numLayer, long* numNeuron);
 	virtual ~CNeuralNet();
 	void Learn(long numData, double** learnData, double** teachData);

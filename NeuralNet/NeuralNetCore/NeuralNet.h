@@ -1,11 +1,12 @@
 #pragma once
 #include <iostream>
-#include "NeuralLayer.h"
+#include <vector>
+#include "Neuron.h"
 
-class CNeuralNet
+class __declspec(dllexport) CNeuralNet
 {
 public:
-	CNeuralNet(long numInputDimension, long numOutputDimension, long numLayer, long* numNeuron);
+	CNeuralNet(long numInputDimension, long numOutputDimension, long numLayer, long* numNeuron, double learningSpeed);
 	virtual ~CNeuralNet();
 	void Learn(long numData, double** learnData, double** teachData);
 	void Run(long numData, double** inputData, double** outputData);
@@ -18,5 +19,10 @@ private:
 	long _numLayer;
 	// Še‘w‚Ìƒjƒ…[ƒƒ“”
 	long* _numNeuron;
-	CNeuralLayer* _layers;
+	// ŠwKŒW”
+	double _learningSpeed;
+	// ‚P‰ñ•ª‚Ì‹³tƒf[ƒ^
+	double* _teachData;
+	std::vector<std::vector<CNeuron*>> _neurons;
+	double Delta(int iLayer, long iNeuron, double teachData = 1.0);
 };

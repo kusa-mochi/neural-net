@@ -1,6 +1,7 @@
 #pragma once
 #include <iostream>
 #include <vector>
+#include "Common.h"
 #include "Neuron.h"
 
 class __declspec(dllexport) CNeuralNet

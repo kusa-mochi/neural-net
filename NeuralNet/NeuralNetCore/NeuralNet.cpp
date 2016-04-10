@@ -185,7 +185,7 @@ void CNeuralNet::Run(long numData, double** inputData, double** outputData)
 				tmpOutput2[iNeuron] = _neurons[iLayer][iNeuron]->Run(tmpOutput1);
 			}
 
-			delete tmpOutput1;
+			delete [] tmpOutput1;
 			tmpOutput1 = tmpOutput2;
 		}
 
@@ -195,8 +195,8 @@ void CNeuralNet::Run(long numData, double** inputData, double** outputData)
 		}
 	}
 
-	delete tmpOutput1;
-	delete tmpOutput2;
+	delete [] tmpOutput1;
+	delete [] tmpOutput2;
 }
 
 

@@ -1,4 +1,6 @@
 #pragma once
+#include "Common.h"
+
 class __declspec(dllexport) CNeuron
 {
 public:

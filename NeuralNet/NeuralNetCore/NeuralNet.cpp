@@ -34,30 +34,13 @@ CNeuralNet::CNeuralNet(long numInputDimension, long numOutputDimension, long num
 	_numNeuron = new long[numLayer];
 	_learningSpeed = learningSpeed;
 	_teachData = NULL;
+
 	for (int iLayer = 0; iLayer < numLayer; iLayer++)
 	{
 		_numNeuron[iLayer] = numNeuron[iLayer];
-
-		// 層を追加する。
-		_neurons.push_back(std::vector<CNeuron*>());
-
-		for (long iNeuron = 0L; iNeuron < numNeuron[iLayer]; iNeuron++)
-		{
-			// ニューロンを追加する。
-			if (iLayer == 0)
-			{
-				_neurons[iLayer].push_back(new CNeuron(_numNeuron[0]));
-			}
-			else if (iLayer == _numLayer - 1)
-			{
-				_neurons[iLayer].push_back(new CNeuron(numOutputDimension));
-			}
-			else
-			{
-				_neurons[iLayer].push_back(new CNeuron(_neurons[iLayer - 1].size()));
-			}
-		}
 	}
+
+	this->GenerateNeuralNet(numInputDimension, numOutputDimension, numLayer, numNeuron, &_neurons);
 }
 
 CNeuralNet::~CNeuralNet()
@@ -65,15 +48,7 @@ CNeuralNet::~CNeuralNet()
 	delete[] _numNeuron;
 	delete[] _teachData;
 
-	for (int iLayer = 0; iLayer < _numLayer; iLayer++)
-	{
-		for (long iNeuron = 0L; iNeuron < _numNeuron[iLayer]; iNeuron++)
-		{
-			delete _neurons[iLayer][iNeuron];
-		}
-		_neurons[iLayer].clear();
-	}
-	_neurons.clear();
+	this->DeleteNeurons(&_neurons);
 }
 
 void CNeuralNet::Learn(long numData, double** learnData, double** teachData)
@@ -95,24 +70,29 @@ void CNeuralNet::Learn(long numData, double** learnData, double** teachData)
 
 	double* output = new double[_numOutputDimension];
 	double d = 0.0;
+
+	// 重み係数を保持しておくためのニューラルネットを生成する。
+	std::vector<std::vector<CNeuron*>> tmpNeurons;
+	this->GenerateNeuralNet(_numInputDimension, _numOutputDimension, _numLayer, _numNeuron, &tmpNeurons);
+
 	for (long iData = 0L; iData < numData; iData++)
 	{
 		this->Run(1L, &learnData[iData], &output);
 
-		// 出力層の重み係数更新
+		// 出力層の重み係数更新値を保持する。
 		for (long iNeuron = 0L; iNeuron < _numNeuron[_numLayer - 1]; iNeuron++)
 		{
 			d = this->Delta(_numLayer - 1, iNeuron, teachData[iData][iNeuron]);
 			for (long iWeight = 0L; iWeight < _numNeuron[_numLayer - 2]; iWeight++)
 			{
-				_neurons[_numLayer - 1][iNeuron]->AddWeight(
+				tmpNeurons[_numLayer - 1][iNeuron]->SetWeight(
 					iWeight,
 					_learningSpeed * d * _neurons[_numLayer - 2][iWeight]->GetOutput()
 					);
 			}
 		}
 
-		// 中間層の重み係数更新
+		// 中間層の重み係数更新値を保持する。
 		for (int iLayer = _numLayer - 2; iLayer >= 1; iLayer--)
 		{
 			for (long iNeuron = 0L; iNeuron < _numNeuron[iLayer]; iNeuron++)
@@ -120,7 +100,7 @@ void CNeuralNet::Learn(long numData, double** learnData, double** teachData)
 				d = this->Delta(iLayer, iNeuron);
 				for (long iWeight = 0L; iWeight < _numNeuron[iLayer - 1]; iWeight++)
 				{
-					_neurons[iLayer][iNeuron]->AddWeight(
+					tmpNeurons[iLayer][iNeuron]->SetWeight(
 						iWeight,
 						_learningSpeed * d * _neurons[iLayer][iWeight]->GetOutput()
 						);
@@ -128,19 +108,47 @@ void CNeuralNet::Learn(long numData, double** learnData, double** teachData)
 			}
 		}
 
-		// 入力層の重み係数更新
+		// 入力層の重み係数更新値を保持する。
 		for (long iNeuron = 0L; iNeuron < _numNeuron[0]; iNeuron++)
 		{
 			d = this->Delta(0, iNeuron);
 			for (long iWeight = 0L; iWeight < _numInputDimension; iWeight++)
 			{
-				_neurons[0][iNeuron]->AddWeight(
+				tmpNeurons[0][iNeuron]->SetWeight(
 					iWeight,
 					_learningSpeed * d * learnData[iData][iWeight]
 					);
 			}
 		}
+
+		// 重み係数を更新する。
+		for (long iNeuron = 0L; iNeuron < _numNeuron[0]; iNeuron++)
+		{
+			for (long iWeight = 0L; iWeight < _numInputDimension; iWeight++)
+			{
+				_neurons[0][iNeuron]->AddWeight(
+					iWeight,
+					tmpNeurons[0][iNeuron]->GetWeight(iWeight)
+					);
+			}
+		}
+		for (int iLayer = 1; iLayer < _numLayer; iLayer++)
+		{
+			for (long iNeuron = 0L; iNeuron < _numNeuron[iLayer]; iNeuron++)
+			{
+				for (long iWeight = 0L; iWeight < _numNeuron[iLayer - 1]; iWeight++)
+				{
+					_neurons[iLayer][iNeuron]->AddWeight(
+						iWeight,
+						tmpNeurons[iLayer][iNeuron]->GetWeight(iWeight)
+						);
+				}
+			}
+		}
 	}
+
+	// 重み係数の更新値の保持に用いたニューラルネットを破棄する。
+	this->DeleteNeurons(&tmpNeurons);
 }
 
 void CNeuralNet::Run(long numData, double** inputData, double** outputData)
@@ -185,7 +193,7 @@ void CNeuralNet::Run(long numData, double** inputData, double** outputData)
 				tmpOutput2[iNeuron] = _neurons[iLayer][iNeuron]->Run(tmpOutput1);
 			}
 
-			delete [] tmpOutput1;
+			delete[] tmpOutput1;
 			tmpOutput1 = tmpOutput2;
 		}
 
@@ -195,8 +203,8 @@ void CNeuralNet::Run(long numData, double** inputData, double** outputData)
 		}
 	}
 
-	delete [] tmpOutput1;
-	delete [] tmpOutput2;
+	delete[] tmpOutput1;
+	delete[] tmpOutput2;
 }
 
 
@@ -232,4 +240,75 @@ double CNeuralNet::Delta(int iLayer, long iNeuron, double teachData)
 	}
 
 	return delta;
+}
+
+void CNeuralNet::GenerateNeuralNet(long numInputDimension, long numOutputDimension, long numLayer, long* numNeuron, std::vector<std::vector<CNeuron*>>* neurons)
+{
+	if (numInputDimension < 1)
+	{
+		throw std::invalid_argument("numInputDimension");
+	}
+	if (numOutputDimension < 1)
+	{
+		throw std::invalid_argument("numOutputDimension");
+	}
+	if (numLayer < 2)
+	{
+		throw std::invalid_argument("numLayer must be over 1.");
+	}
+	if (numNeuron == NULL)
+	{
+		throw std::invalid_argument("numNeuron");
+	}
+	if (numOutputDimension != numNeuron[numLayer - 1])
+	{
+		throw std::invalid_argument("numOutputDimension must be same as numNeuron.");
+	}
+	if (neurons != NULL)
+	{
+		throw std::invalid_argument("neurons");
+	}
+
+	for (int iLayer = 0; iLayer < numLayer; iLayer++)
+	{
+		// 層を追加する。
+		neurons->push_back(std::vector<CNeuron*>());
+
+		for (long iNeuron = 0L; iNeuron < numNeuron[iLayer]; iNeuron++)
+		{
+			// ニューロンを追加する。
+			if (iLayer == 0)
+			{
+				(*neurons)[iLayer].push_back(new CNeuron(numNeuron[0]));
+			}
+			else if (iLayer == _numLayer - 1)
+			{
+				(*neurons)[iLayer].push_back(new CNeuron(numOutputDimension));
+			}
+			else
+			{
+				(*neurons)[iLayer].push_back(new CNeuron((*neurons)[iLayer - 1].size()));
+			}
+		}
+	}
+}
+
+void CNeuralNet::DeleteNeurons(std::vector<std::vector<CNeuron*>>* neurons)
+{
+	if (neurons == NULL)
+	{
+		return;
+	}
+
+	for (int iLayer = 0; iLayer < _numLayer; iLayer++)
+	{
+		for (long iNeuron = 0L; iNeuron < _numNeuron[iLayer]; iNeuron++)
+		{
+			delete (*neurons)[iLayer][iNeuron];
+		}
+
+		(*neurons)[iLayer].clear();
+	}
+	neurons->clear();
+	neurons = NULL;
 }

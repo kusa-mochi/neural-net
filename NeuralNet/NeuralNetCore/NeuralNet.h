@@ -26,4 +26,6 @@ private:
 	double* _teachData;
 	std::vector<std::vector<CNeuron*>> _neurons;
 	double Delta(int iLayer, long iNeuron, double teachData = 1.0);
+	void GenerateNeuralNet(long numInputDimension, long numOutputDimension, long numLayer, long* numNeuron, std::vector<std::vector<CNeuron*>>* neurons);
+	void DeleteNeurons(std::vector<std::vector<CNeuron*>>* neurons);
 };

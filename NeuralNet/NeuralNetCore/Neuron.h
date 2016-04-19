@@ -10,6 +10,7 @@ public:
 	double GetOutput();
 	void AddWeight(long iWeight, double weight);
 	double GetWeight(long iWeight);
+	void SetWeight(long iWeight, double weight);
 private:
 	long _numInput;
 	double* _weight;

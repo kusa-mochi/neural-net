@@ -72,3 +72,18 @@ double CNeuron::GetWeight(long iWeight)
 
 	return _weight[iWeight];
 }
+
+
+void CNeuron::SetWeight(long iWeight, double weight)
+{
+	if ((iWeight < 0) || (_numInput <= iWeight))
+	{
+		throw std::invalid_argument("iWeight");
+	}
+	if (_weight == NULL)
+	{
+		throw std::exception("_weight == NULL");
+	}
+
+	_weight[iWeight] = weight;
+}

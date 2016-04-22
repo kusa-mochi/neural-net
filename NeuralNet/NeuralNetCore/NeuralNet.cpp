@@ -68,7 +68,7 @@ void CNeuralNet::Learn(long numData, double** learnData, double** teachData)
 
 	_teachData = new double[_numOutputDimension];
 
-	double* output = new double[_numOutputDimension];
+	double** output = NULL;
 	double d = 0.0;
 
 	// 重み係数を保持しておくためのニューラルネットを生成する。
@@ -151,7 +151,22 @@ void CNeuralNet::Learn(long numData, double** learnData, double** teachData)
 	this->DeleteNeurons(&tmpNeurons);
 }
 
-void CNeuralNet::Run(long numData, double** inputData, double** outputData)
+long CNeuralNet::GetNumInput()
+{
+	return _numInputDimension;
+}
+
+long CNeuralNet::GetNumOutput()
+{
+	return _numOutputDimension;
+}
+
+long CNeuralNet::GetNumLayer()
+{
+	return _numLayer;
+}
+
+void CNeuralNet::Run(long numData, double** inputData, double*** outputData)
 {
 	if (numData < 1)
 	{
@@ -161,7 +176,7 @@ void CNeuralNet::Run(long numData, double** inputData, double** outputData)
 	{
 		throw std::invalid_argument("inputData");
 	}
-	if (outputData != NULL)
+	if (outputData == NULL)
 	{
 		throw std::invalid_argument("outputData");
 	}
@@ -170,10 +185,10 @@ void CNeuralNet::Run(long numData, double** inputData, double** outputData)
 		throw std::exception("_numLayer < 2");
 	}
 
-	outputData = new double*[numData];
+	*outputData = new double*[numData];
 	for (int iData = 0L; iData < numData; iData++)
 	{
-		outputData[iData] = new double[_numOutputDimension];
+		(*outputData)[iData] = new double[_numOutputDimension];
 	}
 
 	double* tmpOutput1 = NULL;
@@ -193,18 +208,26 @@ void CNeuralNet::Run(long numData, double** inputData, double** outputData)
 				tmpOutput2[iNeuron] = _neurons[iLayer][iNeuron]->Run(tmpOutput1);
 			}
 
-			delete[] tmpOutput1;
+			if (tmpOutput1 != NULL)
+			{
+				delete[] tmpOutput1;
+				tmpOutput1 = NULL;
+			}
 			tmpOutput1 = tmpOutput2;
 		}
 
 		for (long iNeuron = 0L; iNeuron < _numOutputDimension; iNeuron++)
 		{
-			outputData[iData][iNeuron] = tmpOutput1[iNeuron];
+			(*outputData)[iData][iNeuron] = tmpOutput1[iNeuron];
 		}
 	}
 
-	delete[] tmpOutput1;
-	delete[] tmpOutput2;
+	if (tmpOutput1 != NULL)
+	{
+		delete[] tmpOutput1;
+		tmpOutput1 = NULL;
+		tmpOutput2 = NULL;
+	}
 }
 
 
@@ -264,7 +287,7 @@ void CNeuralNet::GenerateNeuralNet(long numInputDimension, long numOutputDimensi
 	{
 		throw std::invalid_argument("numOutputDimension must be same as numNeuron.");
 	}
-	if (neurons != NULL)
+	if (neurons == NULL)
 	{
 		throw std::invalid_argument("neurons");
 	}
@@ -279,15 +302,11 @@ void CNeuralNet::GenerateNeuralNet(long numInputDimension, long numOutputDimensi
 			// ニューロンを追加する。
 			if (iLayer == 0)
 			{
-				(*neurons)[iLayer].push_back(new CNeuron(numNeuron[0]));
-			}
-			else if (iLayer == _numLayer - 1)
-			{
-				(*neurons)[iLayer].push_back(new CNeuron(numOutputDimension));
+				(*neurons)[iLayer].push_back(new CNeuron(numInputDimension));
 			}
 			else
 			{
-				(*neurons)[iLayer].push_back(new CNeuron((*neurons)[iLayer - 1].size()));
+				(*neurons)[iLayer].push_back(new CNeuron(numNeuron[iLayer - 1]));
 			}
 		}
 	}

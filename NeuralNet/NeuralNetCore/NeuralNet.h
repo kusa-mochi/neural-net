@@ -10,7 +10,10 @@ public:
 	CNeuralNet(long numInputDimension, long numOutputDimension, long numLayer, long* numNeuron, double learningSpeed);
 	virtual ~CNeuralNet();
 	void Learn(long numData, double** learnData, double** teachData);
-	void Run(long numData, double** inputData, double** outputData);
+	void Run(long numData, double** inputData, double*** outputData);
+	long GetNumInput();
+	long GetNumOutput();
+	long GetNumLayer();
 private:
 	// “ü—Íƒf[ƒ^‚ÌŸŒ³”
 	long _numInputDimension;

@@ -6,6 +6,9 @@ MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "NeuralNetCore", "NeuralNetCore\NeuralNetCore.vcxproj", "{27DA9512-44B7-4881-8FDC-19F2E7E292C6}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NeuralNet", "NeuralNet\NeuralNet.csproj", "{82D06DDD-97CF-447D-A97C-5A51692330E6}"
+	ProjectSection(ProjectDependencies) = postProject
+		{27DA9512-44B7-4881-8FDC-19F2E7E292C6} = {27DA9512-44B7-4881-8FDC-19F2E7E292C6}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "NeuralNetCoreTest", "NeuralNetCoreTest\NeuralNetCoreTest.vcxproj", "{E6AA5FFD-C9E2-4BAC-B251-919DED19B89C}"
 EndProject
@@ -22,7 +25,6 @@ Global
 		{27DA9512-44B7-4881-8FDC-19F2E7E292C6}.Debug|Any CPU.ActiveCfg = Debug|Win32
 		{27DA9512-44B7-4881-8FDC-19F2E7E292C6}.Debug|x64.ActiveCfg = Debug|x64
 		{27DA9512-44B7-4881-8FDC-19F2E7E292C6}.Debug|x64.Build.0 = Debug|x64
-		{27DA9512-44B7-4881-8FDC-19F2E7E292C6}.Debug|x64.Deploy.0 = Debug|x64
 		{27DA9512-44B7-4881-8FDC-19F2E7E292C6}.Debug|x86.ActiveCfg = Debug|Win32
 		{27DA9512-44B7-4881-8FDC-19F2E7E292C6}.Debug|x86.Build.0 = Debug|Win32
 		{27DA9512-44B7-4881-8FDC-19F2E7E292C6}.Release|Any CPU.ActiveCfg = Release|Win32
@@ -45,7 +47,6 @@ Global
 		{E6AA5FFD-C9E2-4BAC-B251-919DED19B89C}.Debug|Any CPU.ActiveCfg = Debug|Win32
 		{E6AA5FFD-C9E2-4BAC-B251-919DED19B89C}.Debug|x64.ActiveCfg = Debug|x64
 		{E6AA5FFD-C9E2-4BAC-B251-919DED19B89C}.Debug|x64.Build.0 = Debug|x64
-		{E6AA5FFD-C9E2-4BAC-B251-919DED19B89C}.Debug|x64.Deploy.0 = Debug|x64
 		{E6AA5FFD-C9E2-4BAC-B251-919DED19B89C}.Debug|x86.ActiveCfg = Debug|Win32
 		{E6AA5FFD-C9E2-4BAC-B251-919DED19B89C}.Debug|x86.Build.0 = Debug|Win32
 		{E6AA5FFD-C9E2-4BAC-B251-919DED19B89C}.Release|Any CPU.ActiveCfg = Release|Win32

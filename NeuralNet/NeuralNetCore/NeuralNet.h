@@ -1,6 +1,9 @@
 #pragma once
 #include <iostream>
 #include <vector>
+#include <string>
+#include <exception>
+#include <sstream>
 #include "Common.h"
 #include "Neuron.h"
 
@@ -31,4 +34,7 @@ private:
 	double Delta(int iLayer, long iNeuron, double teachData = 1.0);
 	void GenerateNeuralNet(long numInputDimension, long numOutputDimension, long numLayer, long* numNeuron, std::vector<std::vector<CNeuron*>>* neurons);
 	void DeleteNeurons(std::vector<std::vector<CNeuron*>>* neurons);
+#ifdef _DEBUG
+	void PrintWeightValue();
+#endif
 };

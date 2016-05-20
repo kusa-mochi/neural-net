@@ -9,8 +9,17 @@ CNeuron::CNeuron(long numInput)
 		throw std::invalid_argument("numInput");
 	}
 
+	std::random_device rnd;
+	std::mt19937 mt(rnd());
+	std::uniform_real_distribution<> weightRandValue(0, 1.0);
+
 	_numInput = numInput;
+	_bias = weightRandValue(mt);
 	_weight = new double[numInput];
+	for (long iWeight = 0L; iWeight < numInput; iWeight++)
+	{
+		_weight[iWeight] = weightRandValue(mt);
+	}
 }
 
 CNeuron::~CNeuron()
@@ -21,26 +30,26 @@ CNeuron::~CNeuron()
 
 double CNeuron::Run(double* inputData)
 {
-	double sum = 0.0;
+	_u = 0.0;
 	for (long iInput = 0L; iInput < _numInput; iInput++)
 	{
-		sum += _weight[iInput] * inputData[iInput];
+		_u += _weight[iInput] * inputData[iInput];
 	}
 
-	_output = this->Sigmoid(sum + _bias, 1.0);
+	_output = this->Sigmoid(_u - _bias, 1.0);
 	return _output;
+}
+
+
+double CNeuron::GetOutputWithoutBias()
+{
+	return this->Sigmoid(_u, 1.0);
 }
 
 
 double CNeuron::Sigmoid(double x, double a)
 {
 	return 1.0 / (1.0 + std::exp(-a * x));
-}
-
-
-double CNeuron::GetOutput()
-{
-	return _output;
 }
 
 

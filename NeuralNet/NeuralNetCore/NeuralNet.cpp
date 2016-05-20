@@ -1,4 +1,3 @@
-#include <exception>
 #include "NeuralNet.h"
 
 CNeuralNet::CNeuralNet(long numInputDimension, long numOutputDimension, long numLayer, long* numNeuron, double learningSpeed)
@@ -41,6 +40,10 @@ CNeuralNet::CNeuralNet(long numInputDimension, long numOutputDimension, long num
 	}
 
 	this->GenerateNeuralNet(numInputDimension, numOutputDimension, numLayer, numNeuron, &_neurons);
+
+#ifdef _DEBUG
+	this->PrintWeightValue();
+#endif
 }
 
 CNeuralNet::~CNeuralNet()
@@ -72,11 +75,14 @@ void CNeuralNet::Learn(long numData, double** learnData, double** teachData)
 	double d = 0.0;
 
 	// 重み係数を保持しておくためのニューラルネットを生成する。
-	std::vector<std::vector<CNeuron*>> tmpNeurons;
-	this->GenerateNeuralNet(_numInputDimension, _numOutputDimension, _numLayer, _numNeuron, &tmpNeurons);
+	std::vector<std::vector<CNeuron*>> *tmpNeurons = NULL, *oldWeightUpdate = new std::vector<std::vector<CNeuron*>>();
+	this->GenerateNeuralNet(_numInputDimension, _numOutputDimension, _numLayer, _numNeuron, oldWeightUpdate);
 
 	for (long iData = 0L; iData < numData; iData++)
 	{
+		tmpNeurons = new std::vector<std::vector<CNeuron*>>();
+		this->GenerateNeuralNet(_numInputDimension, _numOutputDimension, _numLayer, _numNeuron, tmpNeurons);
+
 		this->Run(1L, &learnData[iData], &output);
 
 		// 出力層の重み係数更新値を保持する。
@@ -85,11 +91,12 @@ void CNeuralNet::Learn(long numData, double** learnData, double** teachData)
 			d = this->Delta(_numLayer - 1, iNeuron, teachData[iData][iNeuron]);
 			for (long iWeight = 0L; iWeight < _numNeuron[_numLayer - 2]; iWeight++)
 			{
-				tmpNeurons[_numLayer - 1][iNeuron]->SetWeight(
+				(*tmpNeurons)[_numLayer - 1][iNeuron]->SetWeight(
 					iWeight,
-					_learningSpeed * d * _neurons[_numLayer - 2][iWeight]->GetOutput()
+					_learningSpeed * (d * _neurons[_numLayer - 2][iWeight]->GetOutput() + (*oldWeightUpdate)[_numLayer - 1][iNeuron]->GetWeight(iWeight))
 					);
 			}
+			(*tmpNeurons)[_numLayer - 1][iNeuron]->SetBias(_learningSpeed * (d + (*oldWeightUpdate)[_numLayer - 1][iNeuron]->GetBias()));
 		}
 
 		// 中間層の重み係数更新値を保持する。
@@ -100,11 +107,12 @@ void CNeuralNet::Learn(long numData, double** learnData, double** teachData)
 				d = this->Delta(iLayer, iNeuron);
 				for (long iWeight = 0L; iWeight < _numNeuron[iLayer - 1]; iWeight++)
 				{
-					tmpNeurons[iLayer][iNeuron]->SetWeight(
+					(*tmpNeurons)[iLayer][iNeuron]->SetWeight(
 						iWeight,
-						_learningSpeed * d * _neurons[iLayer][iWeight]->GetOutput()
+						_learningSpeed * d * (_neurons[iLayer][iWeight]->GetOutput() + (*oldWeightUpdate)[iLayer][iNeuron]->GetWeight(iWeight))
 						);
 				}
+				(*tmpNeurons)[iLayer][iNeuron]->SetBias(_learningSpeed * (d + (*oldWeightUpdate)[iLayer][iNeuron]->GetBias()));
 			}
 		}
 
@@ -114,11 +122,12 @@ void CNeuralNet::Learn(long numData, double** learnData, double** teachData)
 			d = this->Delta(0, iNeuron);
 			for (long iWeight = 0L; iWeight < _numInputDimension; iWeight++)
 			{
-				tmpNeurons[0][iNeuron]->SetWeight(
+				(*tmpNeurons)[0][iNeuron]->SetWeight(
 					iWeight,
-					_learningSpeed * d * learnData[iData][iWeight]
+					_learningSpeed * (d * learnData[iData][iWeight] + (*oldWeightUpdate)[0][iNeuron]->GetWeight(iWeight))
 					);
 			}
+			(*tmpNeurons)[0][iNeuron]->SetBias(_learningSpeed * (d + (*oldWeightUpdate)[0][iNeuron]->GetBias()));
 		}
 
 		// 重み係数を更新する。
@@ -128,9 +137,10 @@ void CNeuralNet::Learn(long numData, double** learnData, double** teachData)
 			{
 				_neurons[0][iNeuron]->AddWeight(
 					iWeight,
-					tmpNeurons[0][iNeuron]->GetWeight(iWeight)
+					(*tmpNeurons)[0][iNeuron]->GetWeight(iWeight)
 					);
 			}
+			_neurons[0][iNeuron]->AddBias((*tmpNeurons)[0][iNeuron]->GetBias());
 		}
 		for (int iLayer = 1; iLayer < _numLayer; iLayer++)
 		{
@@ -140,15 +150,19 @@ void CNeuralNet::Learn(long numData, double** learnData, double** teachData)
 				{
 					_neurons[iLayer][iNeuron]->AddWeight(
 						iWeight,
-						tmpNeurons[iLayer][iNeuron]->GetWeight(iWeight)
+						(*tmpNeurons)[iLayer][iNeuron]->GetWeight(iWeight)
 						);
 				}
+				_neurons[iLayer][iNeuron]->AddBias((*tmpNeurons)[iLayer][iNeuron]->GetBias());
 			}
 		}
+
+		this->DeleteNeurons(oldWeightUpdate);
+		oldWeightUpdate = tmpNeurons;
 	}
 
 	// 重み係数の更新値の保持に用いたニューラルネットを破棄する。
-	this->DeleteNeurons(&tmpNeurons);
+	this->DeleteNeurons(tmpNeurons);
 }
 
 long CNeuralNet::GetNumInput()
@@ -248,10 +262,11 @@ double CNeuralNet::Delta(int iLayer, long iNeuron, double teachData)
 
 	double delta = 0.0;
 	double output = _neurons[iLayer][iNeuron]->GetOutput();
+	double outputWithoutBias = _neurons[iLayer][iNeuron]->GetOutputWithoutBias();
 
 	if (iLayer == _numLayer - 1)
 	{
-		delta = (teachData - output) * output * (1.0 - output);
+		delta = (teachData - output) * outputWithoutBias * (1.0 - outputWithoutBias);
 	}
 	else
 	{
@@ -259,7 +274,7 @@ double CNeuralNet::Delta(int iLayer, long iNeuron, double teachData)
 		{
 			delta += _neurons[iLayer + 1][iNextNeuron]->GetWeight(iNeuron) * this->Delta(iLayer + 1, iNextNeuron);
 		}
-		delta *= output * (1.0 - output);
+		delta *= outputWithoutBias * (1.0 - outputWithoutBias);
 	}
 
 	return delta;
@@ -331,3 +346,28 @@ void CNeuralNet::DeleteNeurons(std::vector<std::vector<CNeuron*>>* neurons)
 	neurons->clear();
 	neurons = NULL;
 }
+
+#ifdef _DEBUG
+void CNeuralNet::PrintWeightValue()
+{
+	for (long iNeuron = 0L; iNeuron < _numNeuron[0]; iNeuron++)
+	{
+		for (long iWeight = 0L; iWeight < _numInputDimension; iWeight++)
+		{
+			std::cout << _neurons[0][iNeuron]->GetWeight(iWeight) << ",";
+		}
+		std::cout << _neurons[0][iNeuron]->GetBias() << ",";
+	}
+	for (int iLayer = 1; iLayer < _numLayer; iLayer++)
+	{
+		for (long iNeuron = 0L; iNeuron < _numNeuron[iLayer]; iNeuron++)
+		{
+			for (long iWeight = 0L; iWeight < _numNeuron[iLayer - 1]; iWeight++)
+			{
+				std::cout << _neurons[iLayer][iNeuron]->GetWeight(iWeight) << ",";
+			}
+			std::cout << _neurons[iLayer][iNeuron]->GetBias() << std::endl;
+		}
+	}
+}
+#endif

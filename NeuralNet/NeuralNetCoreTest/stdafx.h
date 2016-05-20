@@ -7,7 +7,9 @@
 
 #include "targetver.h"
 
-// CppUnitTest のヘッダー
-#include "CppUnitTest.h"
+#include <stdio.h>
+#include <tchar.h>
+
+
 
 // TODO: プログラムに必要な追加ヘッダーをここで参照してください

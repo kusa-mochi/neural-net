@@ -34,6 +34,10 @@ CNeuralNet::CNeuralNet(long numInputDimension, long numOutputDimension, long num
 	_learningSpeed = learningSpeed;
 	_teachData = NULL;
 
+#ifdef _DEBUG
+	_ofs = new std::ofstream("debug_output.txt");
+#endif
+
 	for (int iLayer = 0; iLayer < numLayer; iLayer++)
 	{
 		_numNeuron[iLayer] = numNeuron[iLayer];
@@ -48,6 +52,11 @@ CNeuralNet::CNeuralNet(long numInputDimension, long numOutputDimension, long num
 
 CNeuralNet::~CNeuralNet()
 {
+#ifdef _DEBUG
+	_ofs->close();
+	delete _ofs;
+#endif
+
 	delete[] _numNeuron;
 	delete[] _teachData;
 
@@ -159,6 +168,10 @@ void CNeuralNet::Learn(long numData, double** learnData, double** teachData)
 
 		this->DeleteNeurons(oldWeightUpdate);
 		oldWeightUpdate = tmpNeurons;
+
+#ifdef _DEBUG
+		this->PrintWeightValue();
+#endif
 	}
 
 	// 重み係数の更新値の保持に用いたニューラルネットを破棄する。
@@ -350,24 +363,29 @@ void CNeuralNet::DeleteNeurons(std::vector<std::vector<CNeuron*>>* neurons)
 #ifdef _DEBUG
 void CNeuralNet::PrintWeightValue()
 {
+	//std::cout << "CNeuralNet::PrintWeightValue begins." << std::endl;
 	for (long iNeuron = 0L; iNeuron < _numNeuron[0]; iNeuron++)
 	{
 		for (long iWeight = 0L; iWeight < _numInputDimension; iWeight++)
 		{
-			std::cout << _neurons[0][iNeuron]->GetWeight(iWeight) << ",";
+			(*_ofs) << _neurons[0][iNeuron]->GetWeight(iWeight) << ",";
 		}
-		std::cout << _neurons[0][iNeuron]->GetBias() << ",";
+		(*_ofs) << _neurons[0][iNeuron]->GetBias() << ",";
 	}
+	(*_ofs) << ",";
 	for (int iLayer = 1; iLayer < _numLayer; iLayer++)
 	{
 		for (long iNeuron = 0L; iNeuron < _numNeuron[iLayer]; iNeuron++)
 		{
 			for (long iWeight = 0L; iWeight < _numNeuron[iLayer - 1]; iWeight++)
 			{
-				std::cout << _neurons[iLayer][iNeuron]->GetWeight(iWeight) << ",";
+				(*_ofs) << _neurons[iLayer][iNeuron]->GetWeight(iWeight) << ",";
 			}
-			std::cout << _neurons[iLayer][iNeuron]->GetBias() << std::endl;
+			(*_ofs) << _neurons[iLayer][iNeuron]->GetBias() << ",";
 		}
+		(*_ofs) << ",";
 	}
+	(*_ofs) << std::endl;
+	//std::cout << "CNeuralNet::PrintWeightValue ends." << std::endl;
 }
 #endif

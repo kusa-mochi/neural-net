@@ -3,7 +3,7 @@
 #include <vector>
 #include <string>
 #include <exception>
-#include <sstream>
+#include <fstream>
 #include "Common.h"
 #include "Neuron.h"
 
@@ -35,6 +35,7 @@ private:
 	void GenerateNeuralNet(long numInputDimension, long numOutputDimension, long numLayer, long* numNeuron, std::vector<std::vector<CNeuron*>>* neurons);
 	void DeleteNeurons(std::vector<std::vector<CNeuron*>>* neurons);
 #ifdef _DEBUG
+	std::ofstream* _ofs;
 	void PrintWeightValue();
 #endif
 };

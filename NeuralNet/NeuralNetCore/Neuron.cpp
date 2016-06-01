@@ -36,20 +36,20 @@ double CNeuron::Run(double* inputData)
 		_u += _weight[iInput] * inputData[iInput];
 	}
 
-	_output = this->Sigmoid(_u - _bias, 1.0);
+	_output = this->Sigmoid(_u - _bias);
 	return _output;
 }
 
 
 double CNeuron::GetOutputWithoutBias()
 {
-	return this->Sigmoid(_u, 1.0);
+	return this->Sigmoid(_u);
 }
 
 
 double CNeuron::Sigmoid(double x, double a)
 {
-	return 1.0 / (1.0 + std::exp(-a * x));
+	return 1.0 / (1.0 + std::exp(-a + x));
 }
 
 

@@ -30,7 +30,7 @@ bool Test_CreateNeuralNet()
 {
 	try
 	{
-		CNeuralNet* net = new CNeuralNet(2, 1, 3, new long[3]{ 2, 5, 1 }, 0.3);
+		CNeuralNet* net = new CNeuralNet(2, 1, 3, new long[3]{ 2, 5, 1 }, 0.9);
 		long numInput = net->GetNumInput();
 		long numOutput = net->GetNumOutput();
 		long numLayer = net->GetNumLayer();
@@ -63,7 +63,7 @@ bool Test_Learn_X_of_XY()
 		std::uniform_real_distribution<> xOver2(2.0, 10.0);
 
 		// ニューラルネットを生成する。
-		CNeuralNet* net = new CNeuralNet(2, 1, 3, new long[3]{ 2, 3, 1 }, 0.3);
+		CNeuralNet* net = new CNeuralNet(2, 1, 3, new long[3]{ 2, 3, 1 }, 0.5);
 
 		// 学習データを生成する。
 		double** learnData = new double*[NLearn];

@@ -34,5 +34,5 @@ private:
 	double _bias;
 	double _u;
 	double _output;
-	double Sigmoid(double x, double a = 1.0);
+	double Sigmoid(double x, double a = 0.0);
 };

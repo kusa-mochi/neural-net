@@ -2,11 +2,16 @@
 #include <iostream>
 #include <exception>
 #include <cassert>
-#include "NeuralNet.h"
+#include <time.h>
+#include "NeuralNetCore.h"
 
-void DoTest(std::string testName, bool (*pFunc)())
+#define MAX_RAND 1.0
+#define MIN_RAND -1.0
+#define URAND() (((double)rand() / (0x7fff * (MAX_RAND - MIN_RAND))) + MIN_RAND)
+
+void DoTest(std::string testName, bool(*pFunc)())
 {
-	std::cout << "tesing " << testName << "...";
+	std::cout << "tesing " << testName.c_str() << "...";
 	std::cout << (pFunc() == true ? ": successed." : ": failed.") << std::endl;
 }
 
@@ -28,123 +33,162 @@ void DoTest(std::string testName, bool (*pFunc)())
 // ニューラルネット生成のテスト
 bool Test_CreateNeuralNet()
 {
+	long* numNeuron = NULL;
+	CNeuralNetCore* net = NULL;
+
 	try
 	{
-		CNeuralNet* net = new CNeuralNet(2, 1, 3, new long[3]{ 2, 5, 1 }, 0.9);
-		long numInput = net->GetNumInput();
-		long numOutput = net->GetNumOutput();
-		long numLayer = net->GetNumLayer();
-
-		assert(numInput == 2L);
-		assert(numOutput == 1L);
-		assert(numLayer == 3L);
+		numNeuron = new long[3]{ 2, 2, 1 };
+		net = new CNeuralNetCore(3, numNeuron);
 	}
-	catch(...)
+	catch (...)
 	{
+		delete[] numNeuron;
+		delete net;
 		return false;
 	}
 
+	delete[] numNeuron;
+	delete net;
 	return true;
 }
 
 //学習のテスト
-bool Test_Learn_X_of_XY()
+bool Test_Learn_XOR()
 {
+	double* testData1 = new double[2]{ 0.0, 0.0 };
+	double* testData2 = new double[2]{ 0.0, 1.0 };
+	double* testData3 = new double[2]{ 1.0, 0.0 };
+	double* testData4 = new double[2]{ 1.0, 1.0 };
+	double* teachData1 = new double[1]{ 0.4 };
+	double* teachData2 = new double[1]{ 1.0 };
+	double* teachData3 = new double[1]{ 0.2 };
+	double* teachData4 = new double[1]{ 0.1234567 };
+	CNeuralNetCore* net = NULL;
+	long numLayer = 4;
+	long* numNeuron = new long[4]{ 2, 3, 3, 1 };
+	double* result = new double[1];
+
 	try
 	{
 		// 各種設定
-		long NLearn = 20000;
-		long NTest = 100;
-		std::random_device rnd;
-		std::mt19937 mt(rnd());
-		std::uniform_real_distribution<> x(-10.0, 10.0);
-		std::uniform_real_distribution<> y(-10.0, 10.0);
-		std::uniform_real_distribution<> xUnder2(-10.0, 2.0);
-		std::uniform_real_distribution<> xOver2(2.0, 10.0);
+		long NLearn = 100000;
 
 		// ニューラルネットを生成する。
-		CNeuralNet* net = new CNeuralNet(2, 1, 3, new long[3]{ 2, 3, 1 }, 0.5);
-
-		// 学習データを生成する。
-		double** learnData = new double*[NLearn];
-		for (long iData = 0L; iData < NLearn; iData++)
-		{
-			learnData[iData] = new double[2];
-			if (iData % 2 == 0)
-			{
-				learnData[iData][0] = xUnder2(mt);
-				learnData[iData][1] = y(mt);
-			}
-			else
-			{
-				learnData[iData][0] = xOver2(mt);
-				learnData[iData][1] = y(mt);
-			}
-		}
-
-		// 教師データを生成する。
-		double** teachData = new double*[NLearn];
-		for (long iData = 0L; iData < NLearn; iData++)
-		{
-			teachData[iData] = new double[1];
-			if (iData % 2 == 0)
-			{
-				teachData[iData][0] = 0.0;
-			}
-			else
-			{
-				teachData[iData][0] = 1.0;
-			}
-		}
+		net = new CNeuralNetCore(numLayer, numNeuron);
 
 		// 学習する。
-		net->Learn(NLearn, learnData, teachData);
-
-		// テストデータを生成する。
-		double** testData = new double*[NTest];
-		for (long iData = 0L; iData < NTest; iData++)
+		for (long iLearn = 0L; iLearn < NLearn; iLearn++)
 		{
-			testData[iData] = new double[2];
-			testData[iData][0] = x(mt);
-			testData[iData][1] = y(mt);
-		}
-
-		// 想定される出力のデータを生成する。
-		double** targetOutput = new double*[NTest];
-		for (long iData = 0L; iData < NTest; iData++)
-		{
-			targetOutput[iData] = new double[1];
-			targetOutput[iData][0] = ((testData[iData][0] > 2.0) ? 1.0 : 0.0);
+			net->Learn(testData1, teachData1);
+			net->Learn(testData2, teachData2);
+			net->Learn(testData3, teachData3);
+			net->Learn(testData4, teachData4);
 		}
 
 		// テストデータの入力に対する出力を得る。
-		double** outputData = NULL;
-		net->Run(NTest, testData, &outputData);
-
-		//// 出力を評価する。
-		//std::ofstream fs;
-		//fs.open("c:\\tmp\\result.dat");
-		//fs << "x\ty\ttarget\toutput\tscore" << std::endl;
-		//for (long iData = 0L; iData < NTest; iData++)
-		//{
-		//	fs << testData[iData][0] << "\t" << testData[iData][1] << "\t" << targetOutput[iData][0] << "\t" << outputData[iData][0] << "\t" << ((((targetOutput[iData][0] - outputData[iData][0])*(targetOutput[iData][0] - outputData[iData][0])) < 0.001) ? 1 : 0) << std::endl;
-		//}
-		//fs.close();
+		std::cout << std::endl;
+		net->Run(testData1, result); std::cout << "{0.0, 0.0} => " << result[0] << std::endl;
+		net->Run(testData2, result); std::cout << "{0.0, 1.0} => " << result[0] << std::endl;
+		net->Run(testData3, result); std::cout << "{1.0, 0.0} => " << result[0] << std::endl;
+		net->Run(testData4, result); std::cout << "{1.0, 1.0} => " << result[0] << std::endl;
 	}
 	catch (...)
 	{
+		delete[] testData1;
+		delete[] testData2;
+		delete[] testData3;
+		delete[] testData4;
+		delete[] teachData1;
+		delete[] teachData2;
+		delete[] teachData3;
+		delete[] teachData4;
+		delete net;
+		delete[] numNeuron;
+		delete[] result;
 		return false;
 	}
 
+	delete net;
+	delete[] numNeuron;
+	delete[] result;
+	return true;
+}
+
+// 判別のテスト
+bool Test_HiLow()
+{
+	CNeuralNetCore* net = NULL;
+	long numLayer = 3;
+	long* numNeuron = new long[3]{ 1, 3, 1 };
+	double* result = new double[1];
+	double* testData = new double[1]{ 0.0 };
+	double* teachData = new double[1]{ 0.0 };
+	long NLearn = 10000;
+	long NTest = 10;
+
+	try
+	{
+		net = new CNeuralNetCore(numLayer, numNeuron);
+		for (long iLearn = 0L; iLearn < NLearn; iLearn++)
+		{
+			testData[0] = URAND();
+			if (testData[0] < -0.7)
+			{
+				teachData[0] = 0.0;
+			}
+			else
+			{
+				teachData[0] = 1.0;
+			}
+
+			net->Learn(testData, teachData);
+		}
+
+		std::cout << std::endl;
+		for (long iTest = 0L; iTest < NTest; iTest++)
+		{
+			testData[0] = URAND();
+			if (testData[0] < -0.7)
+			{
+				teachData[0] = 0.0;
+			}
+			else
+			{
+				teachData[0] = 1.0;
+			}
+
+			net->Run(testData, result);
+			std::cout << iTest << "| data: " << testData[0] << ", target: " << teachData[0] << ", result: " << result[0] << std::endl;
+		}
+	}
+	catch (...)
+	{
+		delete net;
+		delete[] numNeuron;
+		delete[] result;
+		delete[] testData;
+		delete[] teachData;
+		return false;
+	}
+
+	delete net;
+	delete[] numNeuron;
+	delete[] result;
+	delete[] testData;
+	delete[] teachData;
 	return true;
 }
 
 int main()
 {
+	srand((unsigned int)time(NULL));
+
 	DoTest("Test_CreateNeuralNet", Test_CreateNeuralNet);
-	DoTest("Test_Learn_X_of_XY", Test_Learn_X_of_XY);
+	DoTest("Test_Learn_XOR", Test_Learn_XOR);
+	DoTest("Test_HiLow", Test_HiLow);
 
 	getchar();
-    return 0;
+	return 0;
 }
 
